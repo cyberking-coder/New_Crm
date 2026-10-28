@@ -1,17 +1,20 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { listBlocksForLandingPage } from "@/lib/landing/queries";
+import { renderBlock } from "@/components/landing/render";
 import { RegistrationForm } from "./registration-form";
 
 export const dynamic = "force-dynamic";
 
 type LandingData = {
+  id: string;
   public_slug: string;
   headline: string;
   subheadline: string | null;
   body_md: string | null;
   cta_label: string;
   is_published: boolean;
-  webinar: { title: string; timezone: string } | null;
+  webinar: { webinar_id: string; title: string; timezone: string } | null;
 };
 
 async function loadLanding(slug: string): Promise<LandingData | null> {
@@ -19,31 +22,37 @@ async function loadLanding(slug: string): Promise<LandingData | null> {
   const { data, error } = await service
     .from("landing_pages")
     .select(
-      "public_slug,headline,subheadline,body_md,cta_label,is_published,webinar:webinars(title,timezone)",
+      "id,public_slug,headline,subheadline,body_md,cta_label,is_published,webinar_id,webinar:webinars(title,timezone)",
     )
     .eq("public_slug", slug)
     .eq("is_published", true)
     .maybeSingle();
   if (error || !data) return null;
-  return data as unknown as LandingData;
+  const d = data as unknown as {
+    id: string;
+    public_slug: string;
+    headline: string;
+    subheadline: string | null;
+    body_md: string | null;
+    cta_label: string;
+    is_published: boolean;
+    webinar_id: string;
+    webinar: { title: string; timezone: string } | null;
+  };
+  return {
+    ...d,
+    webinar: d.webinar ? { webinar_id: d.webinar_id, title: d.webinar.title, timezone: d.webinar.timezone } : null,
+  };
 }
 
 type NextSession = { scheduled_at: string; duration_minutes: number };
 
-async function loadNextSession(slug: string): Promise<NextSession | null> {
+async function loadNextSession(webinarId: string): Promise<NextSession | null> {
   const service = createServiceClient();
-  const { data: lp } = await service
-    .from("landing_pages")
-    .select("webinar_id")
-    .eq("public_slug", slug)
-    .maybeSingle();
-  const landing = lp as { webinar_id: string } | null;
-  if (!landing) return null;
-
   const { data } = await service
     .from("webinar_sessions")
     .select("scheduled_at,duration_minutes")
-    .eq("webinar_id", landing.webinar_id)
+    .eq("webinar_id", webinarId)
     .gte("scheduled_at", new Date().toISOString())
     .order("scheduled_at", { ascending: true })
     .limit(1)
@@ -53,9 +62,42 @@ async function loadNextSession(slug: string): Promise<NextSession | null> {
 
 export default async function LandingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [landing, next] = await Promise.all([loadLanding(slug), loadNextSession(slug)]);
+  const landing = await loadLanding(slug);
   if (!landing || !landing.webinar) notFound();
 
+  const [blocks, next] = await Promise.all([
+    listBlocksForLandingPage(landing.id, { publicOnly: true }),
+    loadNextSession(landing.webinar.webinar_id),
+  ]);
+
+  const regForm = <RegistrationForm slug={landing.public_slug} ctaLabel={landing.cta_label} />;
+
+  // Block-based rendering — once a page has blocks, they take over the layout.
+  if (blocks.length > 0) {
+    const hasFormAnchor = blocks.some((b) => b.kind === "form_anchor");
+    return (
+      <main className="min-h-screen bg-background">
+        {blocks.map((b) => (
+          <div key={b.id}>
+            {renderBlock(b, {
+              formSlot: regForm,
+              defaultCountdownIso: next?.scheduled_at,
+            })}
+          </div>
+        ))}
+        {!hasFormAnchor ? (
+          <section id="register" className="w-full px-6 py-12">
+            <div className="mx-auto max-w-xl rounded-xl border bg-card p-6 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold">Save your seat</h2>
+              {regForm}
+            </div>
+          </section>
+        ) : null}
+      </main>
+    );
+  }
+
+  // Legacy / default simple layout — used until the owner adds any block.
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto grid min-h-screen max-w-5xl grid-cols-1 gap-10 px-6 py-16 md:grid-cols-5">
@@ -88,10 +130,10 @@ export default async function LandingPage({ params }: { params: Promise<{ slug: 
           ) : null}
         </section>
 
-        <section className="md:col-span-2">
+        <section id="register" className="md:col-span-2">
           <div className="rounded-xl border bg-card p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold">Save your seat</h2>
-            <RegistrationForm slug={landing.public_slug} ctaLabel={landing.cta_label} />
+            {regForm}
           </div>
         </section>
       </div>

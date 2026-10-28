@@ -65,12 +65,20 @@ export default async function LandingPagesPage() {
                   </Badge>
                 </TD>
                 <TD className="text-right">
-                  <Link
-                    href={`/webinars/${r.webinar_id}`}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Edit
-                  </Link>
+                  <div className="flex items-center justify-end gap-3">
+                    <Link
+                      href={`/webinars/${r.webinar_id}/landing/builder`}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Builder
+                    </Link>
+                    <Link
+                      href={`/webinars/${r.webinar_id}`}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Edit
+                    </Link>
+                  </div>
                 </TD>
               </TR>
             ))}

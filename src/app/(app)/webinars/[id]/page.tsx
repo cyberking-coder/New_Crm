@@ -110,6 +110,12 @@ export default async function WebinarDetailPage({ params }: { params: Promise<{ 
                     ) : null}
                   </div>
                 </div>
+                <Link
+                  href={`/webinars/${webinar.id}/landing/builder`}
+                  className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Open page builder
+                </Link>
                 <LandingPageForm webinarId={webinar.id} landing={landing} />
               </>
             ) : (
