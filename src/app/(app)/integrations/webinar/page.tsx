@@ -4,7 +4,7 @@ import { SUPPORTED_WEBINAR_PROVIDERS } from "@/lib/integrations/webinar/registry
 import { PageHeader, Placeholder } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { supabaseEnv } from "@/lib/supabase/env";
+import { getSiteUrl } from "@/lib/site-url";
 import { ConnectForm } from "./connect-form";
 import { ConnectionActions } from "./connection-actions";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function WebinarIntegrationsPage() {
   const org = await requireActiveOrganization();
   const connections = await listConnections(org.organizationId, "webinar");
-  const base = supabaseEnv.siteUrl();
+  const base = await getSiteUrl();
 
   return (
     <div className="space-y-6">

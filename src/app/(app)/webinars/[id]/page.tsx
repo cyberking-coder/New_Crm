@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { WebinarEditForm } from "./edit-form";
 import { AddSessionForm } from "./add-session-form";
 import { LandingPageForm } from "./landing-form";
-import { supabaseEnv } from "@/lib/supabase/env";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +49,7 @@ export default async function WebinarDetailPage({ params }: { params: Promise<{ 
     })(),
   ]);
 
-  const publicUrl = landing ? `${supabaseEnv.siteUrl()}/r/${landing.public_slug}` : null;
+  const publicUrl = landing ? `${await getSiteUrl()}/r/${landing.public_slug}` : null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">

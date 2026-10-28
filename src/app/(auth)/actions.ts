@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { supabaseEnv } from "@/lib/supabase/env";
+import { getSiteUrl } from "@/lib/site-url";
 
 const credentialsSchema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -46,7 +46,7 @@ export async function signUpAction(
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     ...parsed.data,
-    options: { emailRedirectTo: `${supabaseEnv.siteUrl()}/auth/callback` },
+    options: { emailRedirectTo: `${await getSiteUrl()}/auth/callback` },
   });
   if (error) return { error: error.message };
 

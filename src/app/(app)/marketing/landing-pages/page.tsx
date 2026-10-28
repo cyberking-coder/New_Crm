@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Placeholder } from "@/components/layout/page-header";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { supabaseEnv } from "@/lib/supabase/env";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ export default async function LandingPagesPage() {
 
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as unknown as Row[];
-  const base = supabaseEnv.siteUrl();
+  const base = await getSiteUrl();
 
   return (
     <div>
