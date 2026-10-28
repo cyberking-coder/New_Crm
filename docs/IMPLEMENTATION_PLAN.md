@@ -30,12 +30,27 @@ Seven phases. Each phase gates on the previous. Each ends in a user review.
 - [x] CSV export via `/api/registrations/export`.
 - [x] Dashboard counts (webinars, registrations, upcoming sessions) from real queries.
 
-## Phase 3 — Attendance, Recordings, Engagement
+## Phase 3 — Attendance, Recordings, Engagement *(this delivery)*
 
-- Webinar provider adapter boundary + first adapter (TBD provider).
-- Attendance tracking webhook (idempotent).
-- Recordings table + Supabase Storage policy.
-- Engagement events, polls, Q&A, offers schemas and UI.
+- [x] Migrations `0003_attendance_engagement.sql` + `0004_storage.sql`:
+      integration_connections, attendance_sessions, engagement_events, polls,
+      poll_responses, questions, offers, recordings, webhook_events (dedupe
+      unique index on `(connection_id, external_event_id)`), plus a
+      `recordings` Supabase Storage bucket with org-scoped RLS.
+- [x] Adapter boundary at `src/lib/integrations/webinar/` with
+      `WebinarAdapter` interface, a `manual` adapter (documented portable
+      JSON + HMAC-SHA256 signature) and a `zoom` adapter (participant +
+      recording events, Zoom's v0 timestamp signature).
+- [x] Idempotent webhook endpoint `POST /api/webhooks/webinar/[connectionId]`:
+      verifies signature → dedupes via `webhook_events(external_event_id)` →
+      inserts attendance / engagement / recording rows → promotes registrant
+      status to `attended` on first join.
+- [x] `/integrations/webinar` page: add/pause/delete connections, auto-generated
+      webhook secret, copy-ready webhook URL, documented manual payload format.
+- [x] `/audience/attendees`, `/audience/engagement`, `/audience/questions` show
+      real data (empty-state when nothing has arrived).
+- [x] `/webinars/recordings`: list + add external URL + delete.
+- [x] Webinar detail header now shows registrants / attended / recordings counts.
 
 ## Phase 4 — AI, Leads, Pipeline
 

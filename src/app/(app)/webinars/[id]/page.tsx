@@ -7,6 +7,7 @@ import {
   getWebinar,
   listSessions,
 } from "@/lib/webinars/queries";
+import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,10 +25,28 @@ export default async function WebinarDetailPage({ params }: { params: Promise<{ 
   const webinar = await getWebinar(org.organizationId, id);
   if (!webinar) notFound();
 
-  const [sessions, landing, registrantCount] = await Promise.all([
+  const [sessions, landing, registrantCount, attendedCount, recordingsCount] = await Promise.all([
     listSessions(org.organizationId, id),
     getLandingPage(org.organizationId, id),
     countRegistrants(org.organizationId, id),
+    (async () => {
+      const s = await createClient();
+      const { count } = await s
+        .from("attendance_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", org.organizationId)
+        .eq("webinar_id", id);
+      return count ?? 0;
+    })(),
+    (async () => {
+      const s = await createClient();
+      const { count } = await s
+        .from("recordings")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", org.organizationId)
+        .eq("webinar_id", id);
+      return count ?? 0;
+    })(),
   ]);
 
   const publicUrl = landing ? `${supabaseEnv.siteUrl()}/r/${landing.public_slug}` : null;
@@ -38,12 +57,20 @@ export default async function WebinarDetailPage({ params }: { params: Promise<{ 
         title={webinar.title}
         description={`/${webinar.slug} · ${webinar.timezone}`}
         actions={
-          <Link
-            href={`/audience/registrations?webinar=${webinar.id}`}
-            className="inline-flex h-9 items-center rounded-md border bg-card px-3 text-sm hover:bg-secondary"
-          >
-            {registrantCount} registrant{registrantCount === 1 ? "" : "s"}
-          </Link>
+          <div className="flex items-center gap-2 text-xs">
+            <Link
+              href={`/audience/registrations?webinar=${webinar.id}`}
+              className="inline-flex h-9 items-center rounded-md border bg-card px-3 hover:bg-secondary"
+            >
+              {registrantCount} registrant{registrantCount === 1 ? "" : "s"}
+            </Link>
+            <span className="inline-flex h-9 items-center rounded-md border bg-card px-3 text-muted-foreground">
+              {attendedCount} attended
+            </span>
+            <span className="inline-flex h-9 items-center rounded-md border bg-card px-3 text-muted-foreground">
+              {recordingsCount} recording{recordingsCount === 1 ? "" : "s"}
+            </span>
+          </div>
         }
       />
 

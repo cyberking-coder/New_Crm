@@ -1,7 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up", "/auth/callback", "/auth/confirm", "/r"];
+const PUBLIC_PATHS = [
+  "/",
+  "/sign-in",
+  "/sign-up",
+  "/auth/callback",
+  "/auth/confirm",
+  "/r",
+  "/api/webhooks",
+];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
