@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/auth/confirm",
   "/r",
   "/api/webhooks",
+  "/invitations",
 ];
 
 function isPublic(pathname: string): boolean {
