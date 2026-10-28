@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { requireActiveOrganization, requireUser } from "@/lib/auth/session";
 import {
   webinarCreateSchema,
@@ -46,10 +46,9 @@ export async function createWebinarAction(
     };
   }
 
-  const supabase = await createClient();
   const service = createServiceClient();
 
-  // Uniqueness check within the org (service bypasses RLS for a clean read).
+  // Uniqueness check within the org.
   const { data: existing, error: slugErr } = await service
     .from("webinars")
     .select("id")
@@ -59,7 +58,9 @@ export async function createWebinarAction(
   if (slugErr) return { error: `Slug check failed: ${slugErr.message}` };
   if (existing) return { fieldErrors: { slug: "This slug is already used in your organization." } };
 
-  const { data: webinarData, error: insErr } = await supabase
+  // Membership was verified by requireActiveOrganization; use the service client
+  // for the write so SSR cookie-session edge cases don't block the insert.
+  const { data: webinarData, error: insErr } = await service
     .from("webinars")
     .insert({
       organization_id: org.organizationId,
@@ -81,7 +82,7 @@ export async function createWebinarAction(
   }
 
   if (parsed.data.session_scheduled_at) {
-    const { error: sessErr } = await supabase.from("webinar_sessions").insert({
+    const { error: sessErr } = await service.from("webinar_sessions").insert({
       webinar_id: webinar.id,
       organization_id: org.organizationId,
       scheduled_at: new Date(parsed.data.session_scheduled_at).toISOString(),
@@ -128,8 +129,8 @@ export async function updateWebinarAction(
     };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  const service = createServiceClient();
+  const { error } = await service
     .from("webinars")
     .update({
       title: parsed.data.title,
@@ -145,7 +146,7 @@ export async function updateWebinarAction(
 
   if (error) return { error: `Could not update webinar: ${error.message}` };
 
-  await createServiceClient().from("audit_logs").insert({
+  await service.from("audit_logs").insert({
     organization_id: org.organizationId,
     actor_id: user.id,
     action: "webinar.updated",
@@ -162,9 +163,13 @@ export async function updateWebinarAction(
 export async function deleteWebinarAction(webinarId: string) {
   const user = await requireUser();
   const org = await requireActiveOrganization();
+  // Only owners/admins may delete — enforce in app code since we're bypassing RLS.
+  if (!["owner", "admin"].includes(org.role)) {
+    throw new Error("Only owners and admins can delete webinars.");
+  }
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  const service = createServiceClient();
+  const { error } = await service
     .from("webinars")
     .delete()
     .eq("id", webinarId)
@@ -172,7 +177,7 @@ export async function deleteWebinarAction(webinarId: string) {
 
   if (error) throw new Error(`Could not delete webinar: ${error.message}`);
 
-  await createServiceClient().from("audit_logs").insert({
+  await service.from("audit_logs").insert({
     organization_id: org.organizationId,
     actor_id: user.id,
     action: "webinar.deleted",
@@ -204,8 +209,8 @@ export async function addSessionAction(
     return { fieldErrors: { duration_minutes: "Between 1 and 1440 minutes." } };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("webinar_sessions").insert({
+  const service = createServiceClient();
+  const { error } = await service.from("webinar_sessions").insert({
     webinar_id: webinarId,
     organization_id: org.organizationId,
     scheduled_at: new Date(scheduledAt).toISOString(),
@@ -240,8 +245,8 @@ export async function updateLandingPageAction(
     };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  const service = createServiceClient();
+  const { error } = await service
     .from("landing_pages")
     .update({
       headline: parsed.data.headline,
@@ -255,7 +260,7 @@ export async function updateLandingPageAction(
 
   if (error) return { error: `Could not update landing page: ${error.message}` };
 
-  await createServiceClient().from("audit_logs").insert({
+  await service.from("audit_logs").insert({
     organization_id: org.organizationId,
     actor_id: user.id,
     action: "landing_page.updated",

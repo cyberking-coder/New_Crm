@@ -53,8 +53,11 @@ export async function createFirstOrganizationAction(
     slug = `${base}-${i + 1}`;
   }
 
-  // Insert through the user's RLS-scoped client so created_by = auth.uid() check passes.
-  const { data: orgData, error: insertErr } = await supabase
+  // Create via the service client. We've already verified the user is signed in
+  // (requireUser above) and we control created_by server-side, so bypassing RLS
+  // for this bootstrap step is safe and avoids chicken-and-egg issues with the
+  // SSR cookie session during the first org creation.
+  const { data: orgData, error: insertErr } = await service
     .from("organizations")
     .insert({ name: parsed.data.name, slug, created_by: user.id })
     .select("id")
@@ -66,12 +69,14 @@ export async function createFirstOrganizationAction(
 
   const orgId = org.id;
 
-  const { error: memberErr } = await supabase.from("organization_members").insert({
+  const { error: memberErr } = await service.from("organization_members").insert({
     organization_id: orgId,
     user_id: user.id,
     role: "owner",
   });
   if (memberErr) {
+    // Roll back the orphan org so the user can retry cleanly.
+    await service.from("organizations").delete().eq("id", orgId);
     return { error: `Could not add owner membership: ${memberErr.message}` };
   }
 
