@@ -1,6 +1,7 @@
 import { requireActiveOrganization } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { listCatalog } from "@/lib/plugins/registry";
+import { toPluginSummary } from "@/lib/plugins/summary";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +56,7 @@ export default async function PluginsPage() {
                 return (
                   <PluginCard
                     key={def.slug}
-                    plugin={def}
+                    plugin={toPluginSummary(def)}
                     installed={{
                       enabled: row.enabled,
                       config: row.config,
@@ -80,7 +81,7 @@ export default async function PluginsPage() {
               </div>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {items.map((p) => (
-                  <PluginCard key={p.slug} plugin={p} installed={null} />
+                  <PluginCard key={p.slug} plugin={toPluginSummary(p)} installed={null} />
                 ))}
               </div>
             </div>

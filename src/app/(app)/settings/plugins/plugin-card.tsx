@@ -8,7 +8,7 @@ import {
   savePluginConfigAction,
   type ActionState,
 } from "./actions";
-import type { PluginDefinition } from "@/lib/plugins/types";
+import type { PluginSummary } from "@/lib/plugins/summary";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ export function PluginCard({
   plugin,
   installed,
 }: {
-  plugin: PluginDefinition;
+  plugin: PluginSummary;
   installed: Installed | null;
 }) {
   const [open, setOpen] = useState(false);
@@ -112,7 +112,7 @@ function ConfigForm({
   initial,
   onDone,
 }: {
-  plugin: PluginDefinition;
+  plugin: PluginSummary;
   initial: Record<string, unknown>;
   onDone: () => void;
 }) {
