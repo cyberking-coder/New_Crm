@@ -5,6 +5,7 @@ import { REGISTRANT_STATUSES } from "@/lib/webinars/schemas";
 import { PageHeader, Placeholder } from "@/components/layout/page-header";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { ScoreButton } from "./score-button";
 
 export const dynamic = "force-dynamic";
 
@@ -134,6 +135,7 @@ export default async function RegistrationsPage({
                 <TH>Source</TH>
                 <TH>Status</TH>
                 <TH>Registered</TH>
+                <TH />
               </TR>
             </THead>
             <TBody>
@@ -163,6 +165,9 @@ export default async function RegistrationsPage({
                   </TD>
                   <TD className="text-xs text-muted-foreground">
                     {new Date(r.created_at).toLocaleString()}
+                  </TD>
+                  <TD className="text-right">
+                    <ScoreButton registrantId={r.id} />
                   </TD>
                 </TR>
               ))}

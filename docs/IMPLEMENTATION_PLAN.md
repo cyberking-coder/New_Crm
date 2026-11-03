@@ -50,11 +50,30 @@ Seven phases. Each phase gates on the previous. Each ends in a user review.
 - [x] `/webinars/recordings`: list + add external URL + delete.
 - [x] Webinar detail header now shows registrants / attended / recordings counts.
 
-## Phase 4 — AI, Leads, Pipeline
+## Phase 4 — AI, Leads, Pipeline *(this delivery)*
 
-- Server-side Claude integration with Zod-validated structured outputs.
-- Engagement summary + explainable lead score per attendee.
-- Leads, contacts, companies, lead_activities, sales_tasks, pipeline stages, follow-up queue.
+- [x] Migration `0009_crm.sql`: companies, contacts, leads, lead_activities,
+      sales_tasks, pipeline_stages (seeded via trigger + backfill), lead_tier
+      enum, activity_kind enum, engagement_summaries.
+- [x] Server-side Anthropic client (`src/lib/ai/anthropic.ts`) — Zod-validated
+      JSON responses, model + token tracking, one retry on validation failure,
+      explicit AIConfigError when key is missing.
+- [x] `scoreLead()` and `summarizeEngagement()` features with strict Zod schemas.
+- [x] `scoreRegistrantAction()` — pulls signals (attendance minutes, poll
+      answers, questions, offer clicks, chat, UTM, webinar context), calls
+      Claude, upserts a lead, writes a `score_change` activity with full
+      rationale, suggested action, and token usage.
+- [x] `/sales/leads` list with tier/stage/search filters.
+- [x] `/sales/leads/[id]` detail: score + rationale card, pipeline stage picker
+      (persisted), tasks sub-card with add-task, note form, activity timeline.
+- [x] `/sales/pipeline` grouped-by-stage view (lightweight kanban-style).
+- [x] `/sales/follow-up` with overdue/today/upcoming/later/someday buckets,
+      standalone task creation.
+- [x] `/sales/contacts` with contacts + companies tables, add-contact form that
+      auto-creates/links the company.
+- [x] "AI score" button on Registrations table rows.
+- [x] Dashboard shows live Leads and Open-tasks counts.
+- [x] `.env.example` adds `ANTHROPIC_API_KEY` + optional `ANTHROPIC_MODEL`.
 
 ## Phase 5 — Email, Automation, Jobs
 

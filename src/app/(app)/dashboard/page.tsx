@@ -19,7 +19,7 @@ async function countAll(orgId: string, table: string): Promise<number> {
 export default async function DashboardPage() {
   const org = await requireActiveOrganization();
 
-  const [webinars, registrants, upcoming] = await Promise.all([
+  const [webinars, registrants, upcoming, leads, openTasks] = await Promise.all([
     countAll(org.organizationId, "webinars"),
     countAll(org.organizationId, "webinar_registrants"),
     (async () => {
@@ -31,6 +31,16 @@ export default async function DashboardPage() {
         .gte("scheduled_at", new Date().toISOString());
       return count ?? 0;
     })(),
+    countAll(org.organizationId, "leads"),
+    (async () => {
+      const supabase = await createClient();
+      const { count } = await supabase
+        .from("sales_tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", org.organizationId)
+        .in("status", ["open", "in_progress"]);
+      return count ?? 0;
+    })(),
   ]);
 
   return (
@@ -39,7 +49,7 @@ export default async function DashboardPage() {
         title={`Welcome, ${org.organizationName}`}
         description="A single-pane view of your webinars, registrants, and pipeline."
       />
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
         <Card>
           <CardHeader>
             <CardTitle>Webinars</CardTitle>
@@ -76,6 +86,30 @@ export default async function DashboardPage() {
             <div className="text-3xl font-semibold tracking-tight">{upcoming}</div>
             <Link href="/webinars" className="text-xs text-primary hover:underline">
               See schedule →
+            </Link>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Leads</CardTitle>
+            <CardDescription>AI-scored prospects</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-semibold tracking-tight">{leads}</div>
+            <Link href="/sales/leads" className="text-xs text-primary hover:underline">
+              Review →
+            </Link>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Open tasks</CardTitle>
+            <CardDescription>Follow-ups in flight</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-semibold tracking-tight">{openTasks}</div>
+            <Link href="/sales/follow-up" className="text-xs text-primary hover:underline">
+              Work the queue →
             </Link>
           </CardContent>
         </Card>
