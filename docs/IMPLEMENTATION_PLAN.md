@@ -16,19 +16,17 @@ Seven phases. Each phase gates on the previous. Each ends in a user review.
 
 **Blockers after this phase:** Supabase project + env vars must be provided before Phase 2.
 
-## Phase 2 — Webinars, Registrations, Registrants *(this delivery)*
+## Phase 2 — Webinars, Registrations, Registrants
 
-- [x] Migration `0002_webinars.sql`: webinars, webinar_sessions, landing_pages,
-      webinar_registrants + enums (webinar_type, webinar_status, registrant_status),
-      RLS, public read for published landing pages, auto-create landing_page trigger.
+- [x] Migration `0002_webinars.sql`: webinars, webinar_sessions, webinar_registrants.
 - [x] Webinar list + create + edit (live/automated/hybrid/recurring).
 - [x] Session scheduling with timezone-safe rendering (`Intl.DateTimeFormat` + stored IANA tz).
-- [x] Landing page editor (headline, subheadline, body, CTA, publish toggle).
-- [x] Public registration pages at `/r/[slug]` with Zod-validated server action,
-      UTM capture, honeypot, dedupe-tolerant insert via service client.
 - [x] Registrants list with pagination, search, webinar + status filters.
 - [x] CSV export via `/api/registrations/export`.
 - [x] Dashboard counts (webinars, registrations, upcoming sessions) from real queries.
+- [x] **Removed by user request:** landing pages, block builder, public `/r/[slug]`
+      registration flow, and the plugin registry. Drop migration
+      `0008_drop_landing_and_plugins.sql` is available (opt-in).
 
 ## Phase 3 — Attendance, Recordings, Engagement *(this delivery)*
 

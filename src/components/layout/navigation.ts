@@ -2,7 +2,6 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   BellRing,
-  Puzzle,
   Video,
   Plus,
   Layers,
@@ -15,7 +14,6 @@ import {
   GitBranch,
   ListTodo,
   Building2,
-  LayoutTemplate,
   Mail,
   FileText,
   Workflow,
@@ -85,7 +83,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Marketing",
     items: [
-      { label: "Landing pages", href: "/marketing/landing-pages", icon: LayoutTemplate },
       { label: "Email campaigns", href: "/marketing/campaigns", icon: Mail },
       { label: "Templates", href: "/marketing/templates", icon: FileText },
       { label: "Automation workflows", href: "/marketing/workflows", icon: Workflow },
@@ -118,7 +115,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Organization", href: "/settings/organization", icon: Building },
       { label: "Team members", href: "/settings/team", icon: UsersRound },
       { label: "Roles & permissions", href: "/settings/roles", icon: ShieldCheck },
-      { label: "Plugins", href: "/settings/plugins", icon: Puzzle },
       { label: "API keys", href: "/settings/api-keys", icon: KeyRound },
       { label: "Billing", href: "/settings/billing", icon: Receipt },
       { label: "Audit logs", href: "/settings/audit-logs", icon: ScrollText },

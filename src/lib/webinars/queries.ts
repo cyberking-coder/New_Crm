@@ -22,17 +22,6 @@ export type SessionRow = {
   status: string;
 };
 
-export type LandingPageRow = {
-  id: string;
-  webinar_id: string;
-  public_slug: string;
-  headline: string;
-  subheadline: string | null;
-  body_md: string | null;
-  cta_label: string;
-  is_published: boolean;
-};
-
 export type RegistrantRow = {
   id: string;
   webinar_id: string;
@@ -81,21 +70,6 @@ export async function listSessions(orgId: string, webinarId: string): Promise<Se
     .order("scheduled_at", { ascending: true });
   if (error) throw new Error(`listSessions: ${error.message}`);
   return (data ?? []) as unknown as SessionRow[];
-}
-
-export async function getLandingPage(
-  orgId: string,
-  webinarId: string,
-): Promise<LandingPageRow | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("landing_pages")
-    .select("id,webinar_id,public_slug,headline,subheadline,body_md,cta_label,is_published")
-    .eq("organization_id", orgId)
-    .eq("webinar_id", webinarId)
-    .maybeSingle();
-  if (error) throw new Error(`getLandingPage: ${error.message}`);
-  return (data as unknown as LandingPageRow) ?? null;
 }
 
 export type RegistrantFilter = {

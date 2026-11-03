@@ -1,20 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireActiveOrganization } from "@/lib/auth/session";
-import {
-  countRegistrants,
-  getLandingPage,
-  getWebinar,
-  listSessions,
-} from "@/lib/webinars/queries";
-import { createClient } from "@/lib/supabase/server";
+import { countRegistrants, getWebinar, listSessions } from "@/lib/webinars/queries";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { WebinarEditForm } from "./edit-form";
 import { AddSessionForm } from "./add-session-form";
-import { LandingPageForm } from "./landing-form";
-import { getSiteUrl } from "@/lib/site-url";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +17,8 @@ export default async function WebinarDetailPage({ params }: { params: Promise<{ 
   const webinar = await getWebinar(org.organizationId, id);
   if (!webinar) notFound();
 
-  const [sessions, landing, registrantCount, attendedCount, recordingsCount] = await Promise.all([
+  const [sessions, registrantCount, attendedCount, recordingsCount] = await Promise.all([
     listSessions(org.organizationId, id),
-    getLandingPage(org.organizationId, id),
     countRegistrants(org.organizationId, id),
     (async () => {
       const s = await createClient();
@@ -48,8 +39,6 @@ export default async function WebinarDetailPage({ params }: { params: Promise<{ 
       return count ?? 0;
     })(),
   ]);
-
-  const publicUrl = landing ? `${await getSiteUrl()}/r/${landing.public_slug}` : null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -74,58 +63,14 @@ export default async function WebinarDetailPage({ params }: { params: Promise<{ 
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <WebinarEditForm webinar={webinar} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Landing page</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {landing ? (
-              <>
-                <div className="rounded-md border bg-secondary/40 p-3 text-xs">
-                  <div className="text-muted-foreground">Public URL</div>
-                  <div className="truncate font-mono">{publicUrl}</div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge variant={landing.is_published ? "success" : "secondary"}>
-                      {landing.is_published ? "Published" : "Draft"}
-                    </Badge>
-                    {landing.is_published && publicUrl ? (
-                      <a
-                        href={publicUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Open ↗
-                      </a>
-                    ) : null}
-                  </div>
-                </div>
-                <Link
-                  href={`/webinars/${webinar.id}/landing/builder`}
-                  className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Open page builder
-                </Link>
-                <LandingPageForm webinarId={webinar.id} landing={landing} />
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                The landing page row was not auto-created. Re-run the Phase 2 migration.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <WebinarEditForm webinar={webinar} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

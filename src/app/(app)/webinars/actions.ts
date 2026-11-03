@@ -4,11 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireActiveOrganization, requireUser } from "@/lib/auth/session";
-import {
-  webinarCreateSchema,
-  webinarUpdateSchema,
-  landingPageUpdateSchema,
-} from "@/lib/webinars/schemas";
+import { webinarCreateSchema, webinarUpdateSchema } from "@/lib/webinars/schemas";
 
 export type ActionState = { error?: string; fieldErrors?: Record<string, string> } | undefined;
 
@@ -222,53 +218,3 @@ export async function addSessionAction(
   return undefined;
 }
 
-export async function updateLandingPageAction(
-  webinarId: string,
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const user = await requireUser();
-  const org = await requireActiveOrganization();
-
-  const parsed = landingPageUpdateSchema.safeParse({
-    headline: formData.get("headline"),
-    subheadline: formData.get("subheadline") ?? "",
-    body_md: formData.get("body_md") ?? "",
-    cta_label: formData.get("cta_label"),
-    is_published: formData.get("is_published") === "on",
-  });
-
-  if (!parsed.success) {
-    return {
-      error: "Fix the highlighted fields.",
-      fieldErrors: pickFieldErrors(parsed.error.issues),
-    };
-  }
-
-  const service = createServiceClient();
-  const { error } = await service
-    .from("landing_pages")
-    .update({
-      headline: parsed.data.headline,
-      subheadline: parsed.data.subheadline || null,
-      body_md: parsed.data.body_md || null,
-      cta_label: parsed.data.cta_label,
-      is_published: parsed.data.is_published,
-    })
-    .eq("webinar_id", webinarId)
-    .eq("organization_id", org.organizationId);
-
-  if (error) return { error: `Could not update landing page: ${error.message}` };
-
-  await service.from("audit_logs").insert({
-    organization_id: org.organizationId,
-    actor_id: user.id,
-    action: "landing_page.updated",
-    entity_type: "webinar",
-    entity_id: webinarId,
-    metadata: { is_published: parsed.data.is_published },
-  });
-
-  revalidatePath(`/webinars/${webinarId}`);
-  return undefined;
-}

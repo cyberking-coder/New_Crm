@@ -55,35 +55,3 @@ export const webinarUpdateSchema = webinarCreateSchema
 
 export type WebinarUpdateInput = z.infer<typeof webinarUpdateSchema>;
 
-export const landingPageUpdateSchema = z.object({
-  headline: z.string().trim().min(2).max(200),
-  subheadline: z.string().trim().max(300).optional().or(z.literal("")),
-  body_md: z.string().trim().max(8000).optional().or(z.literal("")),
-  cta_label: z.string().trim().min(1).max(60),
-  is_published: z.coerce.boolean(),
-});
-
-export type LandingPageUpdateInput = z.infer<typeof landingPageUpdateSchema>;
-
-// Public registration — comes from the landing page form; validate strictly.
-export const registrantSubmitSchema = z.object({
-  landing_slug: z.string().trim().min(1).max(64),
-  email: z.string().trim().toLowerCase().email("Enter a valid email").max(254),
-  full_name: z.string().trim().min(1, "Name is required").max(140),
-  phone: z.string().trim().max(40).optional().or(z.literal("")),
-  company: z.string().trim().max(140).optional().or(z.literal("")),
-  consent_marketing: z
-    .union([z.literal("on"), z.literal("true"), z.literal("1"), z.boolean()])
-    .optional()
-    .transform((v) => v === true || v === "on" || v === "true" || v === "1"),
-  // Optional UTM capture.
-  utm_source: z.string().trim().max(120).optional().or(z.literal("")),
-  utm_medium: z.string().trim().max(120).optional().or(z.literal("")),
-  utm_campaign: z.string().trim().max(120).optional().or(z.literal("")),
-  utm_content: z.string().trim().max(120).optional().or(z.literal("")),
-  utm_term: z.string().trim().max(120).optional().or(z.literal("")),
-  // Anti-bot honeypot — must be empty.
-  website: z.string().max(0, "bot").optional().or(z.literal("")),
-});
-
-export type RegistrantSubmitInput = z.infer<typeof registrantSubmitSchema>;
