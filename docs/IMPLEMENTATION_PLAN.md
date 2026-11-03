@@ -75,11 +75,32 @@ Seven phases. Each phase gates on the previous. Each ends in a user review.
 - [x] Dashboard shows live Leads and Open-tasks counts.
 - [x] `.env.example` adds `ANTHROPIC_API_KEY` + optional `ANTHROPIC_MODEL`.
 
-## Phase 5 — Email, Automation, Jobs
+## Phase 5 — Email, Automation, Jobs *(this delivery)*
 
-- Email provider adapter + templates, campaigns, campaign_recipients.
-- Automation workflows (trigger → steps), automation_runs.
-- Durable job queue (pg_cron + a `jobs` table, or a managed scheduler) for reminders, follow-ups, retries.
+- [x] Migration `0010_email_automation.sql`: email_templates, campaigns,
+      campaign_recipients, automation_workflows, automation_runs, jobs +
+      `claim_next_job(worker)` SKIP LOCKED RPC for safe parallel drain.
+- [x] Email adapter boundary (`src/lib/integrations/email/`) + **Resend adapter**
+      with proper 5xx/rate-limit retryable classification.
+- [x] `/integrations/email` connect UI (Resend API key + from name/email),
+      pause/resume/delete, test-send that queues a one-off through the real
+      pipeline.
+- [x] `/marketing/templates` list + CRUD editor with `{{variable}}` extraction,
+      per-field errors, slug uniqueness.
+- [x] `/marketing/campaigns` create (template + audience: all registrants /
+      attendees / per-webinar / lead-tier), detail with totals + recipient
+      log, send/pause actions. Audience resolution → `campaign_recipients`
+      with dedupe → batched `send_campaign_batch` jobs.
+- [x] `/marketing/workflows` list + visual editor (steps: send_email, wait,
+      create_task, update_lead; reorder, inline fields) + per-workflow run log.
+- [x] Durable job queue: `jobs` table + `enqueueJob/claimNextJob/completeJob/
+      failJob` with exponential backoff + jitter + max-attempts cap.
+- [x] Handlers: `send_email`, `send_campaign_batch`, `run_workflow_step`.
+- [x] `POST /api/jobs/tick` cron endpoint with bearer-token auth, 25s budget,
+      50-job cap. `vercel.json` schedules it every minute.
+- [x] Trigger wiring: webhook promotes registrant to `attended` → fires
+      `attendance_recorded`; `scoreRegistrantAction` → fires `lead_scored`.
+- [x] `.env.example` adds `JOBS_RUNNER_SECRET`.
 
 ## Phase 6 — Analytics, Integrations, Webhooks
 

@@ -6,6 +6,7 @@ import { requireActiveOrganization, requireUser } from "@/lib/auth/session";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isAIConfigured, AIConfigError } from "@/lib/ai/anthropic";
 import { scoreLead } from "@/lib/ai/lead-score";
+import { fireTrigger } from "@/lib/automation/triggers";
 
 export type ActionState =
   | { error?: string; ok?: string; fieldErrors?: Record<string, string> }
@@ -228,6 +229,22 @@ export async function scoreRegistrantAction(registrantId: string): Promise<Actio
     entity_type: "lead",
     entity_id: leadId,
     metadata: { score: score.score, tier: score.tier, registrant_id: registrant.id },
+  });
+
+  await fireTrigger({
+    organizationId: org.organizationId,
+    trigger: "lead_scored",
+    entityType: "lead",
+    entityId: leadId,
+    context: {
+      email: registrant.email,
+      name: registrant.full_name ?? "",
+      company: registrant.company ?? "",
+      webinar_id: registrant.webinar_id,
+      lead_id: leadId,
+      score: score.score,
+      tier: score.tier,
+    },
   });
 
   revalidatePath("/sales/leads");

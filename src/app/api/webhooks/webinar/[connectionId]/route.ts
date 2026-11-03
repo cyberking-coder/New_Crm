@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getWebinarAdapter } from "@/lib/integrations/webinar/registry";
 import type { NormalizedWebhookEvent } from "@/lib/integrations/webinar/types";
+import { fireTrigger } from "@/lib/automation/triggers";
 
 type Connection = {
   id: string;
@@ -120,13 +121,37 @@ async function processEvent(
       occurred_at: evt.event.occurred_at,
     });
 
-    // Promote registrant status to attended on first join.
+    // Promote registrant status to attended on first join, and fire the
+    // `attendance_recorded` trigger so any active workflow runs.
     if (registrantId && evt.event.kind === "join") {
-      await service
+      const { data: promoted } = await service
         .from("webinar_registrants")
         .update({ status: "attended" })
         .eq("id", registrantId)
-        .eq("status", "registered");
+        .eq("status", "registered")
+        .select("id,email,full_name,company")
+        .maybeSingle();
+      if (promoted) {
+        const row = promoted as {
+          id: string;
+          email: string;
+          full_name: string | null;
+          company: string | null;
+        };
+        await fireTrigger({
+          organizationId: conn.organization_id,
+          trigger: "attendance_recorded",
+          entityType: "registrant",
+          entityId: row.id,
+          context: {
+            email: row.email,
+            name: row.full_name ?? "",
+            company: row.company ?? "",
+            webinar_id: webinarId,
+            registrant_id: row.id,
+          },
+        });
+      }
     }
     return { ok: true };
   }

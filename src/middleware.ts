@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   "/auth/callback",
   "/auth/confirm",
   "/api/webhooks",
+  "/api/jobs",
   "/invitations",
 ];
 
